@@ -1,8 +1,10 @@
 #### Cloudera Manager
 $sudo ./cloudera-manager --express --force 
+
 *This would required atleast 8 GB of RAM & 2 Cores/CPU to be allocated to VM
 
 $sudo ./cloudera-manager --enterprise --force 
+
 *This would required 16 GB of RAM & 2 Cores/CPU to be allocated to VM
 
 #### Important unix commands
@@ -11,21 +13,27 @@ $hostname
 $ping quickstart.cloudera
 
 $jps
+
 *This would list all processes started by current logged in user i.e. cloudera in our case
 
 $sudo -u hdfs jps
+
 *This would list all java processes started by hdfs user
 
 $ps -fu hdfs
+
 *This would list all processes started by hdfs user
 
 $sudo -u yarn jps
+
 *This would list all java processes started by yarn user
 
 $ps -fu yarn
+
 *This would list all processes started by yarn user
 
 $ps -aef | grep manager
+
 *This would list all processes by grepping 'manager'
 
 #### MySQL
