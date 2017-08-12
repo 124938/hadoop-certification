@@ -84,17 +84,26 @@ $ls -ltr /opt/examples/flume
 
 #### Hive
 $hive
+
 hive>show databases;
+
 hive>show tables;
+
 hive>create database db_test;
+
 hive>use db_test;
+
 hive>exit;
 
 #### Impala
 $impala-shell
+
 quickstart.cloudera:21000>show databases;
+
 quickstart.cloudera:21000>invalidate metadata;
+
 quickstart.cloudera:21000>use db_test;
+
 quickstart.cloudera:21000>show tables;
 
 #### Spark - Scala shell
@@ -103,13 +112,15 @@ $spark-shell --version
 $spark-shell --help
 
 $spark-shell
+
 scala>exit;
 
 #### Spark - Python shell
 $pyspark --version
 
 $pyspark --help
-exit()
+
+python>>>exit()
 
 #### Avro tools
 $avro-tools
