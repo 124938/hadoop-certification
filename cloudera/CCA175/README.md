@@ -9,7 +9,9 @@ $sudo ./cloudera-manager --enterprise --force
 
 # Important unix commands
 $uname -a
+
 $hostname
+
 $ping quickstart.cloudera
 
 $jps
