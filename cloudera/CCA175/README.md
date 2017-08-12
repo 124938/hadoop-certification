@@ -1,4 +1,4 @@
-#### Cloudera Manager
+# Cloudera Manager
 $sudo ./cloudera-manager --express --force 
 
 *This would required atleast 8 GB of RAM & 2 Cores/CPU to be allocated to VM
@@ -7,7 +7,7 @@ $sudo ./cloudera-manager --enterprise --force
 
 *This would required 16 GB of RAM & 2 Cores/CPU to be allocated to VM
 
-#### Important unix commands
+# Important unix commands
 $uname -a
 $hostname
 $ping quickstart.cloudera
@@ -36,7 +36,7 @@ $ps -aef | grep manager
 
 *This would list all processes by grepping 'manager'
 
-#### MySQL
+# MySQL
 $mysql -u root -p -h quickstart.cloudera -p3306
 
 mysql>show databases;
@@ -53,7 +53,7 @@ mysql>show tables;
 
 mysql>exit; 
 
-#### HDFS
+# HDFS
 $hadoop version
 
 $hadoop fs -ls /user
@@ -66,7 +66,7 @@ $hadoop fs -put test.txt /user/cloudera
 
 $hadoop fs -ls /user/cloudera/test.txt
 
-#### Sqoop
+# Sqoop
 $sqoop help
 
 $sqoop version
@@ -83,14 +83,14 @@ $sqoop list-tables \
  --username retail_dba \
  --password cloudera
 
-#### Flume
+# Flume
 $flume-ng version
 
 $flume-ng help
 
 $ls -ltr /opt/examples/flume
 
-#### Hive
+# Hive
 $hive
 
 hive>show databases;
@@ -103,7 +103,7 @@ hive>use db_test;
 
 hive>exit;
 
-#### Impala
+# Impala
 $impala-shell
 
 quickstart.cloudera:21000>show databases;
@@ -114,7 +114,7 @@ quickstart.cloudera:21000>use db_test;
 
 quickstart.cloudera:21000>show tables;
 
-#### Spark - Scala shell
+# Spark - Scala shell
 $spark-shell --version
 
 $spark-shell --help
@@ -123,14 +123,14 @@ $spark-shell
 
 scala>exit;
 
-#### Spark - Python shell
+# Spark - Python shell
 $pyspark --version
 
 $pyspark --help
 
 python>>>exit()
 
-#### Avro tools
+# Avro tools
 $avro-tools
 
 $avro-tools getschema
