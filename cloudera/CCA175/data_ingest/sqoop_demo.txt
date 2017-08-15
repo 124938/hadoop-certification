@@ -22,25 +22,33 @@ Available commands:
 
 /********************************* Common useful commands - START **********************************/
 
+==========================================
 #### Problem Statement - Display version
+==========================================
 
 sqoop version
 
+==============================================================
 #### Problem Statement - List available databases on a server
+==============================================================
 
 sqoop list-databases \
  --connect jdbc:mysql://quickstart.cloudera:3306 \
  --username retail_dba \
  --password cloudera
 
+=============================================================
 #### Problem Statement - List available tables on a database
+=============================================================
 
 sqoop list-tables \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
  --username retail_dba \
  --password cloudera
 
+====================================================================================
 #### Problem Statement - Evaluate a SQL statement (DDL/DML) and display the results
+====================================================================================
 
 sqoop eval \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
@@ -54,7 +62,9 @@ sqoop eval \
 
 sqoop import-all-tables --help
 
+================================================================
 #### Problem Statement - Import all tables from database to HDFS
+================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text
 
@@ -73,7 +83,9 @@ mysql> use retail_db;
 mysql> select count(1) from categories;
 mysql> select count(1) from orders;
 
+======================================================================================================
 #### Problem Statement - Import all tables from database to HDFS (By changing the default delimiters)
+======================================================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text_delimiter
 
@@ -89,7 +101,9 @@ sqoop import-all-tables \
 hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_text_delimiter
 hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text_delimiter/categories/part*
 
+==================================================================================================
 #### Problem Statement - Import all tables from database to HDFS (By compressing the text file)
+==================================================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text_comp
 
@@ -105,7 +119,9 @@ sqoop import-all-tables \
 hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_text_comp
 hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text_comp/categories/part*
 
+=============================================================================================================================
 #### Problem Statement - Import all tables from database to HDFS (By changing the file format as AVRO with file compression)
+=============================================================================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_avro_comp
 
@@ -123,7 +139,9 @@ hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_avro_comp
 avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_avro_comp/categories/part-m-00000.avro
 avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_avro_comp/customers/part-m-00000.avro
 
+=================================================================================================================
 #### Problem Statement - Import all tables from database to HDFS (By changing the file format as Sequence file)
+=================================================================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_seq
 
@@ -136,7 +154,9 @@ sqoop import-all-tables \
 
 hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_seq
 
+=================================================================================================================
 #### Problem Statement - Import all tables from database to HDFS (By changing the file format as Parquet file)
+=================================================================================================================
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_parquet
 
@@ -155,3 +175,230 @@ parquet-tools head --records 10 hdfs://quickstart.cloudera/user/cloudera/sqoop_i
 parquet-tools schema --detailed hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_parquet/products/a09a312d-7bd2-4049-a5eb-8f3a41c3daa1.parquet
 
 /********************************* Import all tables - END **********************************/
+
+
+/********************************* Import all tables in HIVE - START **********************************/
+
+===================================================================================================================
+#### Problem Statement - Import all tables from database to HIVE database (By creating hive tables in text format)
+===================================================================================================================
+
+hive
+hive> create database Sqoop_import_all_retail_db_text;
+hive> use sqoop_import_all_retail_db_text;
+hive> show tables;
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_text_hive \
+ --hive-import \
+ --hive-home /user/hive/warehouse \
+ --hive-database sqoop_import_all_retail_db_text \
+ --hive-overwrite \
+ --create-hive-table
+
+hadoop fs -ls -R /user/hive/warehouse/sqoop_import_all_retail_db_text.db
+
+hive
+hive> use sqoop_import_all_retail_db_text;
+hive> show tables;
+hive> select count(1) from categories;
+hive> select count(1) from products;
+
+Note:
+-> Only text file is getting supported while importing all tables to hive, following options are not supported in above mentioned sqoop command
+--as-sequencefile
+--as-avrodatafile
+--as-parquetfile 
+
+/********************************* Import all tables in HIVE - END **********************************/
+
+
+/********************************* Import specific table - START **********************************/
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_retail_db
+
+========================================================================================
+#### Problem Statement - Import "departments" table from MySQL to HDFS (Default import)
+========================================================================================
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table departments \
+ --target-dir /user/cloudera/sqoop_import_retail_db/departments
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/departments
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/departments/part*
+
+Note:
+-> --num-mappers default value is 4
+
+==================================================================================================================
+#### Problem Statement - Import "customers" table from MySQL to HDFS (By using boundary query and columns option)
+==================================================================================================================
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table customers \
+ --columns "customer_id, customer_fname, customer_lname, customer_email, customer_password, customer_street, customer_city, customer_state, customer_zipcode" \
+ --boundary-query "select min(customer_id), max(customer_id) from customers" \
+ --target-dir /user/cloudera/sqoop_import_retail_db/customers \
+ --num-mappers 1 
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/customers
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/customers/part*
+
+========================================================================================================
+#### Problem Statement - Import "departments_nopk" table from MySQL to HDFS (By using split by option)
+========================================================================================================
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> use retail_db;
+mysql> create table departments_nopk as select * from departments;
+mysql> describe departments_nopk;
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table departments_nopk \
+ --split-by department_id \
+ --target-dir /user/cloudera/sqoop_import_retail_db/departments_nopk
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/departments_nopk
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/departments_nopk/part*
+
+Note:
+-> --split-by option is useful in case of table doesn't have primary key
+-> --num-mappers=1 can be use in absense on --split-by option
+
+==========================================================================================================
+#### Problem Statement - Import data using query from MySQL to HDFS (By using query and splity by option)
+==========================================================================================================
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --query "select * from orders join order_items on (orders.order_id = order_items.order_item_order_id) where \$CONDITIONS" \
+ --split-by order_id \
+ --target-dir /user/cloudera/sqoop_import_retail_db/order_join
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/order_join
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/order_join/part*
+
+Note:
+-> --table and --query options are mutually exclusive
+-> where \$CONDITIONS is mandatory in case of using --query option
+-> --split-by option is useful in case of using --query option
+-> --num-mappers=1 can be use in absense on --split-by option
+
+=======================================================================================================================
+#### Problem Statement - Import "categories" table incrementally from MySQL to HDFS (By using where and append clause)
+=======================================================================================================================
+
+-------------
+First time :
+-------------
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table categories \
+ --where "category_id > 0" \
+ --append \
+ --target-dir /user/cloudera/sqoop_import_retail_db/categories
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/categories
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/categories/part*
+
+----------------------------------
+Insert new records into MySQL DB :
+----------------------------------
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> use retail_db;
+mysql> insert into categories values (59, 7, 'testing 59');
+mysql> insert into categories values (60, 7, 'testing 60');
+
+-------------
+Second time :
+-------------
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table categories \
+ --where "category_id > 58" \
+ --target-dir /user/cloudera/sqoop_import_retail_db/categories \
+ --append 
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/categories
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/categories/part*
+
+Note:
+-> --append option will create new files in existing --target-dir 
+-> Value of condition in --where clause should be referenced from last run  
+
+=================================================================================================================
+#### Problem Statement - Import "products" table incrementally from MySQL to HDFS (By using incremental clause)
+=================================================================================================================
+
+-------------
+First time :
+-------------
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table products \
+ --check-column product_id \
+ --incremental append \
+ --last-value 0 \
+ --target-dir /user/cloudera/sqoop_import_retail_db/products
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/products
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/products/part*
+
+----------------------------------
+Insert new records into MySQL DB :
+----------------------------------
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> use retail_db;
+mysql> insert into products values (1346, 59, 'testing 1346', 'testing 1346 - desc', 100, 'http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy');
+mysql> insert into products values (1347, 59, 'testing 1347', 'testing 1347 - desc', 100, 'http://images.acmesports.sports/Quest+Q64+10+FT.+x+10+FT.+Slant+Leg+Instant+Up+Canopy');
+
+-------------
+Second time :
+-------------
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table products \
+ --check-column product_id \
+ --incremental append \
+ --last-value 1345 \
+ --target-dir /user/cloudera/sqoop_import_retail_db/products
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/products
+hadoop fs -cat /user/cloudera/sqoop_import_retail_db/products/part*
+
+Note:
+-> Following values are supported in --incremental option
+   1) --incremental append : for numeric field
+   2) --incremental lastmodified : for date field
+-> value present in --last-value should be provided from last run 
+
+/********************************* Import specific table - END **********************************/
