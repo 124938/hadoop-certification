@@ -401,4 +401,171 @@ Note:
    2) --incremental lastmodified : for date field
 -> value present in --last-value should be provided from last run 
 
+================================================================================================
+#### Problem Statement - Import "orders" table from MySQL to HDFS (By using sequence file format)
+================================================================================================
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table orders \
+ --target-dir /user/cloudera/sqoop_import_retail_db/orders \
+ --as-sequencefile
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/orders
+
+================================================================================================
+#### Problem Statement - Import "orders" table from MySQL to HDFS (By using avro file format)
+================================================================================================
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table order_items \
+ --target-dir /user/cloudera/sqoop_import_retail_db/order_items \
+ --as-avrodatafile
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_retail_db/order_items
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_import_retail_db/order_items/part-m-00000.avro
+
 /********************************* Import specific table - END **********************************/
+
+
+
+/********************************* Import specific table into Hive - START **********************************/
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_retail_db_hive_tmp
+
+hive
+hive> create database sqoop_import_retail_db;
+
+=======================================================================
+#### Problem Statement - Import "departments" table from MySQL to Hive 
+=======================================================================
+
+hive
+hive> use sqoop_import_retail_db;
+hive> create table departments (department_id int, department_name string);
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table departments \
+ --target-dir /user/cloudera/sqoop_import_retail_db_hive_tmp/departments \
+ --hive-import \
+ --hive-home /user/hive/warehouse \
+ --hive-database sqoop_import_retail_db \
+ --hive-table departments
+
+hive
+hive> use sqoop_import_retail_db;
+hive> select * from departments;
+
+===================================================================================================================
+#### Problem Statement - Import "categories" table from MySQL to Hive (With custom field delimiter in hive table)
+===================================================================================================================
+
+hive
+hive> use sqoop_import_retail_db;
+hive> create table categories (category_id int, department_id int, category_name string) row format delimited fields terminated by "," stored as textfile;
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table categories \
+ --target-dir /user/cloudera/sqoop_import_retail_db_hive_tmp/categories \
+ --fields-terminated-by "," \
+ --hive-import \
+ --hive-home /user/hive/warehouse \
+ --hive-database sqoop_import_retail_db \
+ --hive-table categories
+
+hive
+hive> use sqoop_import_retail_db;
+hive> select * from categories;
+
+===================================================================================================================
+#### Problem Statement - Import "customers" table from MySQL to Hive (With sequence file format in hive table)
+===================================================================================================================
+
+
+hive
+hive> use sqoop_import_retail_db;
+hive> create table customers (customer_id int, customer_fname string, customer_lname string, customer_email string, customer_password string, customer_street string, customer_city string, customer_state string, customer_zipcode string) stored as sequencefile;
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table customers \
+ --target-dir /user/hive/warehouse/sqoop_import_retail_db.db/customers \
+ --append \
+ --as-sequencefile 
+
+Note:
+-> --as-sequencefile is not working from hive
+
+===================================================================================================================
+#### Problem Statement - Import "products" table from MySQL to Hive (With avro file format in hive table)
+===================================================================================================================
+
+avro-tools getschema  hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_avro_comp/products/part-m-00000.avro > products.avsc
+hadoop fs -mkdir /user/cloudera/avro_schema
+hadoop fs -put /home/cloudera/products.avsc /user/cloudera/avro_schema
+hadoop fs -cat /user/cloudera/avro_schema/products.avsc
+
+hive
+hive>create table products stored as avro tblproperties ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/avro_schema/products.avsc');
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table products \
+ --target-dir /user/hive/warehouse/sqoop_import_retail_db.db/products \
+ --append \
+ --as-avrodatafile
+
+hadoop fs -ls  /user/hive/warehouse/sqoop_import_retail_db.db/products/
+hadoop fs -cat /user/hive/warehouse/sqoop_import_retail_db.db/products/part*
+avro-tools tojson hdfs://quickstart.cloudera/user/hive/warehouse/sqoop_import_retail_db.db/products/part-m-00000.avro
+
+hive
+hive> use sqoop_import_retail_db;
+hive> select * from products;
+
+Note:
+-> In this example we are not using hive specific parameter in sqoop command
+-> Make sure to use same properties required by hive table i.e. hdfs path, file format etc.
+
+===================================================================================================================
+#### Problem Statement - Import "orders" table from MySQL to Hive (With parquet file format in hive table)
+===================================================================================================================
+
+hive
+hive>create table orders (
+order_id int,
+order_date bigint,
+order_customer_id int,
+order_status string) stored as PARQUET;
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table orders \
+ --target-dir /user/hive/warehouse/sqoop_import_retail_db.db/orders \
+ --append \
+ --as-parquetfile
+
+hadoop fs -ls  /user/hive/warehouse/sqoop_import_retail_db.db/orders/
+parquet-tools meta hdfs://quickstart.cloudera/user/hive/warehouse/sqoop_import_retail_db.db/orders/15208295-5d7a-43fc-b519-8fd50fadf457.parquet
+parquet-tools schema hdfs://quickstart.cloudera/user/hive/warehouse/sqoop_import_retail_db.db/orders/15208295-5d7a-43fc-b519-8fd50fadf457.parquet
+parquet-tools cat --json hdfs://quickstart.cloudera/user/hive/warehouse/sqoop_import_retail_db.db/orders/15208295-5d7a-43fc-b519-8fd50fadf457.parquet
+
+
+/********************************* Import specific table into Hive - END **********************************/
