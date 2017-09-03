@@ -1,0 +1,254 @@
+
+
+/********************************* Export specific table from HDFS to MySQL - START **********************************/
+
+hadoop fs -mkdir /user/cloudera/sqoop_export 
+
+======================================================================================================================================
+#### Problem Statement - Export to "departments_tmp_export" table from HDFS to MySQL (With text file format and required delimiters)
+======================================================================================================================================
+
+%%%%%%%%%%%% Sqoop - Import %%%%%%%%%%%%%
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> create table departments_tmp(department_id int, department_name varchar(50));
+mysql> describe departments_tmp;
++-----------------+-------------+------+-----+---------+-------+
+| Field           | Type        | Null | Key | Default | Extra |
++-----------------+-------------+------+-----+---------+-------+
+| department_id   | int(11)     | YES  |     | NULL    |       |
+| department_name | varchar(50) | YES  |     | NULL    |       |
++-----------------+-------------+------+-----+---------+-------+
+mysql> insert into departments_tmp values (2, "fitness");
+mysql> insert into departments_tmp values (3, "footware");
+mysql> insert into departments_tmp values (4, "apperal");
+mysql> insert into departments_tmp values (5, "golf");
+mysql> insert into departments_tmp values (6, "outdoors");
+mysql> insert into departments_tmp values (7, "fan shops");
+mysql> insert into departments_tmp values (null, null);
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table departments_tmp \
+ --num-mappers 1 \
+ --target-dir /user/cloudera/sqoop_export/departments_tmp \
+ --fields-terminated-by "|" \
+ --enclosed-by "\"" \
+ --lines-terminated-by "\n" \
+ --null-string "NVL" \
+ --null-non-string "-1" \
+ --as-textfile
+
+hadoop fs -cat /user/cloudera/sqoop_export/departments_tmp/part*
+hadoop fs -cat /user/cloudera/sqoop_export/departments_tmp/part* | wc -l
+
+%%%%%%%%%%%% Sqoop - Export %%%%%%%%%%%%%
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> create table departments_tmp_export like departments_tmp;
+mysql> describe departments_tmp_export;
++-----------------+-------------+------+-----+---------+-------+
+| Field           | Type        | Null | Key | Default | Extra |
++-----------------+-------------+------+-----+---------+-------+
+| department_id   | int(11)     | YES  |     | NULL    |       |
+| department_name | varchar(50) | YES  |     | NULL    |       |
++-----------------+-------------+------+-----+---------+-------+
+
+sqoop export \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table departments_tmp_export \
+ --export-dir /user/cloudera/sqoop_export/departments_tmp \
+ --num-mappers 1 \
+ --input-fields-terminated-by "|" \
+ --input-enclosed-by "\"" \
+ --input-lines-terminated-by "\n" \
+ --input-null-string "NVL" \
+ --input-null-non-string "-1"
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> select * from departments_tmp_export;
+
+=====
+Note:
+=====
+-> While exporting data from HDFS to RDBMS below steps will get executed
+   1) Number of blocks will be find out from file available under --export-dir
+   2) Block will be devided into number of mappers
+-> --input-fields-terminated-by option in export is counter part of --fields-terminated-by in import
+-> --input-enclosed-by option in export is counter part of --enclosed-by in import
+-> --input-lines-terminated-by option in export is counter part of --lines-terminated-by in import
+-> --input-null-string option in export is counter part of --null-string in import
+-> --input-null-non-string option in export is counter part of --null-non-string in import
+
+==================================================================================================================================
+#### Problem Statement - Export to "categories_export" table from HDFS to MySQL (With text file format and upsert/merge feature)
+==================================================================================================================================
+
+%%%%%%%%%%%% Sqoop - Import %%%%%%%%%%%%%
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> describe categories;
++------------------------+-------------+------+-----+---------+----------------+
+| Field                  | Type        | Null | Key | Default | Extra          |
++------------------------+-------------+------+-----+---------+----------------+
+| category_id            | int(11)     | NO   | PRI | NULL    | auto_increment |
+| category_department_id | int(11)     | NO   |     | NULL    |                |
+| category_name          | varchar(45) | NO   |     | NULL    |                |
++------------------------+-------------+------+-----+---------+----------------+
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table categories \
+ --target-dir /user/cloudera/sqoop_export/categories \
+ --as-textfile
+
+hadoop fs -cat /user/cloudera/sqoop_export/categories/part*
+hadoop fs -cat /user/cloudera/sqoop_export/categories/part* | wc -l
+
+%%%%%%%%%%%% Sqoop - Export %%%%%%%%%%%%%
+
+Update HDFS file located at hdfs://quickstart.cloudera/user/cloudera/sqoop_export/categories/part-m-00003
+
+59,7,testing - HDFS Update
+60,7,testing - 60 - HDFS Update
+61,7,HDFS Insert
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> create table categories_export like categories;
+mysql> describe categories_export;
++------------------------+-------------+------+-----+---------+----------------+
+| Field                  | Type        | Null | Key | Default | Extra          |
++------------------------+-------------+------+-----+---------+----------------+
+| category_id            | int(11)     | NO   | PRI | NULL    | auto_increment |
+| category_department_id | int(11)     | NO   |     | NULL    |                |
+| category_name          | varchar(45) | NO   |     | NULL    |                |
++------------------------+-------------+------+-----+---------+----------------+
+
+sqoop export \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table categories_export \
+ --export-dir /user/cloudera/sqoop_export/categories \
+ --update-key category_id \
+ --update-mode allowinsert \
+ --batch
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> select * from categories_export;
+
+=====
+Note:
+=====
+-> Possible available options under --update-mode are:
+   1) updateonly - this should update data in table while exporting data (Execute update DML statement based on --update-key column in RDBMS)
+   2) allowinsert - this should insert new data apart from updating data while exporting data (Execute insert/update DML statement in RDBMS) 
+
+=================================================================================================================================
+#### Problem Statement - Export to "product_export" table from HDFS to MySQL (With avro file format and all or nothing semantic)
+=================================================================================================================================
+
+%%%%%%%%%%%% Sqoop - Import %%%%%%%%%%%%%
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> describe products;
++---------------------+--------------+------+-----+---------+----------------+
+| Field               | Type         | Null | Key | Default | Extra          |
++---------------------+--------------+------+-----+---------+----------------+
+| product_id          | int(11)      | NO   | PRI | NULL    | auto_increment |
+| product_category_id | int(11)      | NO   |     | NULL    |                |
+| product_name        | varchar(45)  | NO   |     | NULL    |                |
+| product_description | varchar(255) | NO   |     | NULL    |                |
+| product_price       | float        | NO   |     | NULL    |                |
+| product_image       | varchar(255) | NO   |     | NULL    |                |
++---------------------+--------------+------+-----+---------+----------------+
+
+sqoop import \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table products \
+ --target-dir /user/cloudera/sqoop_export/products \
+ --as-avrodatafile
+
+hadoop fs -ls /user/cloudera/sqoop_export/products
+hadoop fs -cat /user/cloudera/sqoop_export/products/part*
+
+%%%%%%%%%%%% Sqoop - Export %%%%%%%%%%%%%
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> create table products_export like products;
+mysql> describe products_export;
++---------------------+--------------+------+-----+---------+----------------+
+| Field               | Type         | Null | Key | Default | Extra          |
++---------------------+--------------+------+-----+---------+----------------+
+| product_id          | int(11)      | NO   | PRI | NULL    | auto_increment |
+| product_category_id | int(11)      | NO   |     | NULL    |                |
+| product_name        | varchar(45)  | NO   |     | NULL    |                |
+| product_description | varchar(255) | NO   |     | NULL    |                |
+| product_price       | float        | NO   |     | NULL    |                |
+| product_image       | varchar(255) | NO   |     | NULL    |                |
++---------------------+--------------+------+-----+---------+----------------+
+mysql> create table products_stage_export like products;
+mysql> describe products_stage_export;
++---------------------+--------------+------+-----+---------+----------------+
+| Field               | Type         | Null | Key | Default | Extra          |
++---------------------+--------------+------+-----+---------+----------------+
+| product_id          | int(11)      | NO   | PRI | NULL    | auto_increment |
+| product_category_id | int(11)      | NO   |     | NULL    |                |
+| product_name        | varchar(45)  | NO   |     | NULL    |                |
+| product_description | varchar(255) | NO   |     | NULL    |                |
+| product_price       | float        | NO   |     | NULL    |                |
+| product_image       | varchar(255) | NO   |     | NULL    |                |
++---------------------+--------------+------+-----+---------+----------------+
+
+sqoop export \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --table products_export \
+ --export-dir /user/cloudera/sqoop_export/products \
+ --staging-table products_stage_export \
+ --clear-staging-table \
+ --batch
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+mysql> select * from products_stage_export;
+mysql> select * from products_export;
+
+
+=====
+Note:
+=====
+-> --staging-table structure should always be same as --table
+-> --clear-staging-table option will truncate the table first before exporting data
+-> This will usefull to perform all or nothing semantic i.e. in case of any issue occurs in either of the mapper, it will not copy data from staging table to actual table
+
+/********************************* Export specific table from HDFS to MySQL - END **********************************/
+
+
+
