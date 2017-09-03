@@ -253,7 +253,10 @@ hive> select * from departments;
 
 hive
 hive> use sqoop_import_retail_db;
-hive> create table categories (category_id int, department_id int, category_name string) row format delimited fields terminated by "," stored as textfile;
+hive> create table categories (category_id int, department_id int, category_name string) 
+row format delimited 
+fields terminated by "," 
+stored as textfile;
 
 sqoop import \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
@@ -278,7 +281,17 @@ hive> select * from categories;
 
 hive
 hive> use sqoop_import_retail_db;
-hive> create table customers (customer_id int, customer_fname string, customer_lname string, customer_email string, customer_password string, customer_street string, customer_city string, customer_state string, customer_zipcode string) stored as sequencefile;
+hive> create table customers (
+customer_id int, 
+customer_fname string, 
+customer_lname string, 
+customer_email string, 
+customer_password string, 
+customer_street string, 
+customer_city string, 
+customer_state string, 
+customer_zipcode string) 
+stored as sequencefile;
 
 sqoop import \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
@@ -302,7 +315,9 @@ hadoop fs -put /home/cloudera/products.avsc /user/cloudera/avro_schema
 hadoop fs -cat /user/cloudera/avro_schema/products.avsc
 
 hive
-hive>create table products stored as avro tblproperties ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/avro_schema/products.avsc');
+hive>create table products 
+stored as avro 
+tblproperties ('avro.schema.url'='hdfs://quickstart.cloudera/user/cloudera/avro_schema/products.avsc');
 
 sqoop import \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
@@ -330,7 +345,12 @@ Note:
 ===================================================================================================================
 
 hive
-hive>create table orders (order_id int, order_date bigint, order_customer_id int, order_status string) stored as PARQUET;
+hive>create table orders (
+order_id int, 
+order_date bigint, 
+order_customer_id int, 
+order_status string) 
+stored as PARQUET;
 
 sqoop import \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
