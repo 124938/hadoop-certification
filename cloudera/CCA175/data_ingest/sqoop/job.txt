@@ -1,0 +1,232 @@
+
+/********************************* Create/Execute Job - START **********************************/
+
+=================================================================================================================================================
+#### Problem Statement - Create & execute job to import "departments" table from MySQL to HDFS (Using incremental append option to merge data)
+=================================================================================================================================================
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+
+mysql> describe departments;
++-----------------+-------------+------+-----+---------+----------------+
+| Field           | Type        | Null | Key | Default | Extra          |
++-----------------+-------------+------+-----+---------+----------------+
+| department_id   | int(11)     | NO   | PRI | NULL    | auto_increment |
+| department_name | varchar(45) | NO   |     | NULL    |                |
++-----------------+-------------+------+-----+---------+----------------+
+mysql>exit;
+
+-------------------
+Sqoop - Create Job:
+-------------------
+
+hadoop fs -mkdir -p /user/cloudera/sqoop_job/departments
+
+sqoop job --create dept_incremental_append_job \
+-- import \
+--connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+--username retail_dba \
+--password cloudera \
+--table departments \
+--target-dir /user/cloudera/sqoop_job/departments \
+--merge-key department_id \
+--as-avrodatafile \
+--incremental append \
+--check-column department_id \
+--last-value 0
+
+----------------------------------
+Sqoop - Execute Job (first time):
+----------------------------------
+
+sqoop job --exec dept_incremental_append_job
+
+hadoop fs -ls /user/cloudera/sqoop_job/departments
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00000.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00001.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00002.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00003.avro
+
+----------------------------------
+Sqoop - Execute Job (second time):
+----------------------------------
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+
+mysql> show databases;
+mysql> use retail_db;
+mysql> insert into departments (department_name) values ('Test - 1');
+mysql> insert into departments (department_name) values ('Test - 2');
+mysql> select * from departments;
+mysql> exit;
+
+sqoop job --show dept_incremental_append_job
+
+sqoop job --exec dept_incremental_append_job
+
+hadoop fs -ls /user/cloudera/sqoop_job/departments
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00000.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00001.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00002.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00003.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00004.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_job/departments/part-m-00005.avro
+
+-------------------
+Sqoop - List Jobs:
+-------------------
+
+sqoop job --list
+
+-------------------
+Sqoop - Delete Job:
+--------------------
+
+sqoop job --delete dept_incremental_append_job
+
+=====
+Note:
+=====
+-> --create <<job_id>> is responsible to add job_id in sqoop job repository
+-> --delete <<job_id>> is responsible to remove job_id from sqoop job repository
+-> --show <<job_id>> is responsible to show the content of job_id
+-> --list option is responsible to display available jobs of sqoop job repository
+
+
+=================================================================================================================================================
+#### Problem Statement - Create & execute job to import "employee" table from MySQL to HDFS (Using incremental lastmodified option to merge data)
+=================================================================================================================================================
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+mysql> show databases;
+mysql> use retail_db;
+
+mysql> drop table employee;
+mysql> CREATE TABLE employee (
+employee_id INT NOT NULL AUTO_INCREMENT,
+first_name VARCHAR(20) NOT NULL,
+last_name VARCHAR(25) NOT NULL,
+email VARCHAR(25) NOT NULL,
+phone_number VARCHAR(20) NOT NULL,
+hire_date DATE NOT NULL, 
+job_id VARCHAR(10),
+salary DECIMAL(8,2) NOT NULL,
+commission_pct DECIMAL(2,2),
+manager_id INT,
+department_id INT,
+last_update_date TIMESTAMP NOT NULL,
+PRIMARY KEY (employee_id)
+);
+
+mysql> describe employee;
++------------------+--------------+------+-----+---------+----------------+
+| Field            | Type         | Null | Key | Default | Extra          |
++------------------+--------------+------+-----+---------+----------------+
+| employee_id      | int(11)      | NO   | PRI | NULL    | auto_increment |
+| first_name       | varchar(20)  | NO   |     | NULL    |                |
+| last_name        | varchar(25)  | NO   |     | NULL    |                |
+| email            | varchar(25)  | NO   |     | NULL    |                |
+| phone_number     | varchar(20)  | NO   |     | NULL    |                |
+| hire_date        | date         | NO   |     | NULL    |                |
+| job_id           | varchar(10)  | YES  |     | NULL    |                |
+| salary           | decimal(8,2) | NO   |     | NULL    |                |
+| commission_pct   | decimal(2,2) | YES  |     | NULL    |                |
+| manager_id       | int(11)      | YES  |     | NULL    |                |
+| department_id    | int(11)      | YES  |     | NULL    |                |
+| last_update_date | date         | NO   |     | NULL    |                |
++------------------+--------------+------+-----+---------+----------------+
+
+mysql> insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('shreyash','limbhetwala','shrey.9129@gmail.com','91-9881092803', str_to_date('11-05-2005','%d-%m-%Y'),50000,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Minesh','Marfatia','minesh.1254@gmail.com','91-9858658648', str_to_date('15-05-2005','%d-%m-%Y'),40000,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Rahul','Lokhande','rahul.lok@gmail.com','91-7858725485', str_to_date('25-05-2005','%d-%m-%Y'),45000,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Dherya','Mehta','dherya.mehta@gmail.com','91-7458789658', str_to_date('14-06-2006','%d-%m-%Y'),50000,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Hrisha','Modi','hrisha.modi@gmail.com','91-8956858698', str_to_date('15-07-2006','%d-%m-%Y'),48758,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Bonika','Modi','bonika.modi@gmail.com','91-9658778589', str_to_date('20-08-2006','%d-%m-%Y'),47555,now());
+
+insert into employee(first_name, last_name, email, phone_number, hire_date, salary, last_update_date) 
+values('Nishith','Gnadhi','nishit.gandhi@gmail.com','91-8256969823', str_to_date('26-09-2006','%d-%m-%Y'),49000,now());
+
+mysql> select * from employee;
+mysql> exit;
+
+
+hadoop fs -rm -R /user/cloudera/sqoop_job
+hadoop fs -mkdir -p /user/cloudera/sqoop_job/employees
+
+-------------------
+Sqoop - Create Job:
+-------------------
+
+sqoop job --create employee_incremental_updated_job \
+-- import \
+--connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+--username retail_dba \
+--password cloudera \
+--table employee \
+--as-textfile \
+--target-dir /user/cloudera/sqoop_job/employees \
+--fields-terminated-by '|' \
+--lines-terminated-by '\n' \
+--null-string "NVL" \
+--null-non-string "-1" \
+--incremental lastmodified \
+--check-column last_update_date \
+--last-value "01-May-2000" \
+--merge-key employee_id
+
+----------------------------------
+Sqoop - Execute Job (first time):
+----------------------------------
+
+sqoop job --exec employee_incremental_updated_job
+
+hadoop fs -cat /user/cloudera/sqoop_job/employees/part*
+
+----------------------------------
+Sqoop - Execute Job (second time):
+----------------------------------
+
+mysql -u retail_dba -p -h quickstart.cloudera -P 3306
+
+mysql> show databases;
+mysql> use retail_db;
+mysql> update employee set salary=60000, last_update_date = now() where employee_id=1;
+mysql> update employee set salary=61000, last_update_date = now() where employee_id=2;
+mysql> select * from employee;
+mysql> exit;
+
+sqoop job --show employee_incremental_updated_job
+
+sqoop job --exec employee_incremental_updated_job
+
+hadoop fs -cat /user/cloudera/sqoop_job/employees/part*
+
+-------------------
+Sqoop - List Jobs:
+-------------------
+
+sqoop job --list
+
+-------------------
+Sqoop - Delete Job:
+--------------------
+
+sqoop job --delete employee_incremental_updated_job
+
+
+
+/********************************* Create/Execute Job - END **********************************/
+
