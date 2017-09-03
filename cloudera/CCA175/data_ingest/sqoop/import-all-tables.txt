@@ -1,0 +1,161 @@
+/********************************* Import all tables - START **********************************/
+
+sqoop import-all-tables --help
+
+================================================================
+#### Problem Statement - Import all tables from database to HDFS
+================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_text
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_text
+hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text/categories/part* | wc -l
+hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text/orders/part* | wc -l
+
+mysql -u retail_dba -p
+mysql> use retail_db;
+mysql> select count(1) from categories;
+mysql> select count(1) from orders;
+
+======================================================================================================
+#### Problem Statement - Import all tables from database to HDFS (By changing the default delimiters)
+======================================================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text_delimiter
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_text_delimiter \
+ --enclosed-by "\"" \
+ --fields-terminated-by "|" \
+ --lines-terminated-by "\n"
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_text_delimiter
+hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text_delimiter/categories/part*
+
+==================================================================================================
+#### Problem Statement - Import all tables from database to HDFS (By compressing the text file)
+==================================================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_text_comp
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_text_comp \
+ --as-textfile \
+ --compress \
+ --compression-codec org.apache.hadoop.io.compress.SnappyCodec
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_text_comp
+hadoop fs -cat /user/cloudera/sqoop_import_all_retail_db_text_comp/categories/part*
+
+=============================================================================================================================
+#### Problem Statement - Import all tables from database to HDFS (By changing the file format as AVRO with file compression)
+=============================================================================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_avro_comp
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_avro_comp \
+ --as-avrodatafile \
+ --compress \
+ --compression-codec org.apache.hadoop.io.compress.SnappyCodec
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_avro_comp
+
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_avro_comp/categories/part-m-00000.avro
+avro-tools tojson hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_avro_comp/customers/part-m-00000.avro
+
+=================================================================================================================
+#### Problem Statement - Import all tables from database to HDFS (By changing the file format as Sequence file)
+=================================================================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_seq
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_seq \
+ --as-sequencefile 
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_seq
+
+=================================================================================================================
+#### Problem Statement - Import all tables from database to HDFS (By changing the file format as Parquet file)
+=================================================================================================================
+
+hadoop fs -mkdir /user/cloudera/sqoop_import_all_retail_db_parquet
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_parquet \
+ --as-parquetfile 
+
+hadoop fs -ls -R /user/cloudera/sqoop_import_all_retail_db_parquet
+
+parquet-tools --help
+parquet-tools cat --json hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_parquet/products/a09a312d-7bd2-4049-a5eb-8f3a41c3daa1.parquet
+parquet-tools head --records 10 hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_parquet/products/a09a312d-7bd2-4049-a5eb-8f3a41c3daa1.parquet
+parquet-tools schema --detailed hdfs://quickstart.cloudera/user/cloudera/sqoop_import_all_retail_db_parquet/products/a09a312d-7bd2-4049-a5eb-8f3a41c3daa1.parquet
+
+/********************************* Import all tables - END **********************************/
+
+
+
+/********************************* Import all tables in HIVE - START **********************************/
+
+===================================================================================================================
+#### Problem Statement - Import all tables from database to HIVE database (By creating hive tables in text format)
+===================================================================================================================
+
+hive
+hive> create database Sqoop_import_all_retail_db_text;
+hive> use sqoop_import_all_retail_db_text;
+hive> show tables;
+
+sqoop import-all-tables \
+ --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
+ --username retail_dba \
+ --password cloudera \
+ --warehouse-dir /user/cloudera/sqoop_import_all_retail_db_text_hive \
+ --hive-import \
+ --hive-home /user/hive/warehouse \
+ --hive-database sqoop_import_all_retail_db_text \
+ --hive-overwrite \
+ --create-hive-table
+
+hadoop fs -ls -R /user/hive/warehouse/sqoop_import_all_retail_db_text.db
+
+hive
+hive> use sqoop_import_all_retail_db_text;
+hive> show tables;
+hive> select count(1) from categories;
+hive> select count(1) from products;
+
+Note:
+-> Only text file is getting supported while importing all tables to hive, following options are not supported in above mentioned sqoop command
+--as-sequencefile
+--as-avrodatafile
+--as-parquetfile 
+
+/********************************* Import all tables in HIVE - END **********************************/
+
+
+
+
