@@ -1,6 +1,7 @@
-/********************************* Import all tables - START **********************************/
 
 sqoop import-all-tables --help
+
+/********************************* Import all tables - START **********************************/
 
 ================================================================
 #### Problem Statement - Import all tables from database to HDFS

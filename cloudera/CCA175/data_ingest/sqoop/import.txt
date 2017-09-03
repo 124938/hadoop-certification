@@ -1,4 +1,6 @@
 
+sqoop import --help
+
 /********************************* Import specific table - START **********************************/
 
 hadoop fs -mkdir /user/cloudera/sqoop_import_retail_db

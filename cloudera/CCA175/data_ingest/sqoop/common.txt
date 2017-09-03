@@ -1,3 +1,5 @@
+
+
 /********************************* Common useful commands - START **********************************/
 
 ==========================================
@@ -10,6 +12,8 @@ sqoop version
 #### Problem Statement - List available databases on a server
 ==============================================================
 
+sqoop list-databases --help
+
 sqoop list-databases \
  --connect jdbc:mysql://quickstart.cloudera:3306 \
  --username retail_dba \
@@ -19,6 +23,8 @@ sqoop list-databases \
 #### Problem Statement - List available tables on a database
 =============================================================
 
+sqoop list-tables --help
+
 sqoop list-tables \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \
  --username retail_dba \
@@ -27,6 +33,8 @@ sqoop list-tables \
 ====================================================================================
 #### Problem Statement - Evaluate a SQL statement (DDL/DML) and display the results
 ====================================================================================
+
+sqoop eval --help
 
 sqoop eval \
  --connect jdbc:mysql://quickstart.cloudera:3306/retail_db \

@@ -1,4 +1,5 @@
 
+sqoop export --help
 
 /********************************* Export specific table from HDFS to MySQL - START **********************************/
 
