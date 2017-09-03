@@ -11,6 +11,7 @@ $sudo ./cloudera-manager --enterprise --force
 $uname -a
 
 $hostname
+
 $ping quickstart.cloudera
 
 $jps
