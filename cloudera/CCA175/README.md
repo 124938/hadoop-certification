@@ -11,7 +11,6 @@ $sudo ./cloudera-manager --enterprise --force
 $uname -a
 
 $hostname
-
 $ping quickstart.cloudera
 
 $jps
@@ -139,4 +138,11 @@ $avro-tools getschema
 
 $avro-tools fromjson
 
+$avro-tools tojson <<avro_file_location>>
 
+# Parquet tools
+$parquet-tools meta <<parquet_file_location>>
+
+$parquet-tools schema <<parquet_file_location>>
+
+$parquet-tools cat --json <<parquet_file_location>>
