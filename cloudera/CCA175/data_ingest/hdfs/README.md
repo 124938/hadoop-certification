@@ -65,6 +65,36 @@ Usage: hadoop fs [generic options]
 	[-usage [cmd ...]]
 ```
 
+#### Help on du command of filesystem
+
+```
+hadoop fs -help du
+-du [-s] [-h] <path> ... :
+  Show the amount of space, in bytes, used by the files that match the specified
+  file pattern. The following flags are optional:
+                                                                                 
+  -s  Rather than showing the size of each individual file that matches the
+      pattern, shows the total (summary) size.
+  -h  Formats the sizes of files in a human-readable fashion rather than a number
+      of bytes.
+  
+  Note that, even without the -s option, this only shows size summaries one level
+  deep into a directory.
+  
+  The output is in the form 
+  	size	disk space consumed	name(full path)
+```
+
+#### Help on mkdir command of filesystem
+
+```
+hadoop fs -help mkdir
+-mkdir [-p] <path> ... :
+  Create a directory in specified location.
+                                                  
+  -p  Do not fail if the directory already exists
+```
+
 #### Help on ls command of filesystem
 
 ```
@@ -84,16 +114,6 @@ hadoop fs -help ls
   -h  Formats the sizes of files in a human-readable fashion rather than a number
       of bytes.
   -R  Recursively list the contents of directories.
-```
-
-#### Help on mkdir command of filesystem
-
-```
-hadoop fs -help mkdir
--mkdir [-p] <path> ... :
-  Create a directory in specified location.
-                                                  
-  -p  Do not fail if the directory already exists
 ```
 
 #### Help on cat command of filesystem
