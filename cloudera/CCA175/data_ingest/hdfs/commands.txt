@@ -1,0 +1,79 @@
+
+======================================================================
+#### Problem Statement - Copy/Move data from local filesystem to HDFS
+======================================================================
+
+## local file system commands
+mkdir sample
+mkdir -p /home/cloudera/sample/data
+vi /home/cloudera/sample/data/test_1.txt
+vi /home/cloudera/sample/data/test_2.txt
+vi /home/cloudera/sample/data/test_move.txt
+
+## Create directory in HDFS
+hadoop fs -mkdir sample
+hadoop fs -mkdir -p /user/cloudera/sample/data
+
+## Copy file to HDFS using put command (Using relative path)
+hadoop fs -put sample/data/test_1.txt sample/data
+hadoop fs -put -p -f sample/data/test_1.txt sample/data
+hadoop fs -ls -R sample
+hadoop fs -cat sample/data/test_1.txt
+
+## Copy file to HDFS using copyFromLocal command (Using absolute path)
+hadoop fs -copyFromLocal /home/cloudera/sample/data/test_2.txt /user/cloudera/sample/data/test_2.txt
+hadoop fs -copyFromLocal -f /home/cloudera/sample/data/test_2.txt /user/cloudera/sample/data/test_2.txt
+hadoop fs -ls -R /user/cloudera/sample
+hadoop fs -cat /user/cloudera/sample/data/test_2.txt
+
+## Move file to HDFS using moveFromLocal command (Using absolute path)
+hadoop fs -moveFromLocal -f /home/cloudera/sample/data/test_move.txt /user/cloudera/sample/data
+hadoop fs -ls -R /user/cloudera/sample
+hadoop fs -cat /user/cloudera/sample/data/test_move.txt
+
+## Copy directory to HDFS using put command (Using relative path)
+mkdir -p /home/cloudera/sample/data_dir
+cp -r /home/cloudera/sample/data/*.txt /home/cloudera/sample/data_dir
+
+hadoop fs -mkdir -p /user/cloudera/sample/data_dir
+hadoop fs -put -f /home/cloudera/sample/data_dir /user/cloudera/sample
+hadoop fs -ls -R /user/cloudera/sample/data_dir
+
+#Note:
+-> -p  Preserves access and modification times, ownership and the mode.
+-> -f  Overwrites the destination if it already exists.
+-> -R  Perform task recursively.
+
+======================================================================
+#### Problem Statement - Copy/Move data from HDFS to local filesystem
+======================================================================
+
+## local file system commands
+mkdir -p /home/cloudera/sample/output
+
+## Copy file from HDFS using get command (Using relative path)
+hadoop fs -get -p sample/data/test_1.txt sample/output
+ls -ltr sample/output
+cat sample/output/test_1.txt
+
+## Copy file from HDFS using copyToLocal command (Using absolute path)
+hadoop fs -copyToLocal -p /user/cloudera/sample/data/test_2.txt /home/cloudera/sample/output
+ls -ltr /home/cloudera/sample/output
+cat /home/cloudera/sample/output/test_2.txt
+
+## Copy directory from HDFS using copyToLocal command (Using absolute path)
+hadoop fs -copyToLocal -p /user/cloudera/sample/data_dir /home/cloudera/sample/output
+ls -ltr /home/cloudera/sample/output/data_dir
+
+#Note:
+-> -moveToLocal is not implemented yet.
+
+===============================================
+#### Problem Statement - Remove data from HDFS 
+===============================================
+
+hadoop fs -rm /user/cloudera/sample/data_dir/test_1.txt
+hadoop fs -rm -R /user/cloudera/sample/data_dir
+hadoop fs -ls -R /user/cloudera/sample/data_dir
+
+
