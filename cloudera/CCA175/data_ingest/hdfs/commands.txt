@@ -40,6 +40,7 @@ hadoop fs -put -f /home/cloudera/sample/data_dir /user/cloudera/sample
 hadoop fs -ls -R /user/cloudera/sample/data_dir
 
 #Note:
+-> -p  Do not fail if the directory already exists (In hadoop fs -mkdir command) 
 -> -p  Preserves access and modification times, ownership and the mode.
 -> -f  Overwrites the destination if it already exists.
 -> -R  Perform task recursively.
